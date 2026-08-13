@@ -1,0 +1,1378 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "connections_azuremonitorlogs_externalid": {
+      "defaultValue": "[resourceId('Microsoft.Web/connections', 'azuremonitorlogs')]",
+      "type": "String"
+    },
+    "connections_teams_externalid": {
+      "defaultValue": "[resourceId('Microsoft.Web/connections', 'teams')]",
+      "type": "String"
+    },
+    "connections_azureautomation_externalid": {
+      "defaultValue": "[resourceId('Microsoft.Web/connections', 'azureautomation')]",
+      "type": "String"
+    },
+    "connections_keyvault_externalid": {
+      "defaultValue": "[resourceId('Microsoft.Web/connections', 'keyvault')]",
+      "type": "String"
+    },
+    "logicAppName": {
+      "defaultValue": "email-quarantine-campaign-remediation",
+      "type": "String"
+    },
+    "location": {
+      "defaultValue": "[resourceGroup().location]",
+      "type": "String"
+    },
+    "userAssignedIdentityResourceId": {
+      "defaultValue": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'quarantine-remediation-identity')]",
+      "type": "String"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2017-07-01",
+      "name": "[parameters('logicAppName')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[parameters('userAssignedIdentityResourceId')]": {}
+        }
+      },
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "metadata": {
+            "notes": {}
+          },
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "AutomatedRelease": {
+              "defaultValue": true,
+              "type": "Bool"
+            },
+            "TestMode": {
+              "defaultValue": false,
+              "type": "Bool"
+            },
+            "TestSenderAddress": {
+              "defaultValue": "test.sender@example.com",
+              "type": "String"
+            },
+            "ProductionDomain": {
+              "defaultValue": "contoso.com",
+              "type": "String"
+            },
+            "ProductionMin": {
+              "defaultValue": 30,
+              "type": "Int"
+            },
+            "TestMin": {
+              "defaultValue": 1,
+              "type": "Int"
+            },
+            "CampaignTimeWindow": {
+              "defaultValue": "7d",
+              "type": "String"
+            },
+            "LookbackPeriod": {
+              "defaultValue": "2.1h",
+              "type": "String"
+            },
+            "AllowRemediations": {
+              "defaultValue": true,
+              "type": "Bool"
+            },
+            "ProductionTeam": {
+              "defaultValue": "00000000-0000-0000-0000-000000000000",
+              "type": "String"
+            },
+            "ProductionChannel": {
+              "defaultValue": "19:REPLACE_WITH_PRODUCTION_CHANNEL_ID@thread.tacv2",
+              "type": "String"
+            },
+            "TestChannel": {
+              "defaultValue": "19:REPLACE_WITH_TEST_CHANNEL_ID@thread.tacv2",
+              "type": "String"
+            },
+            "TeamsTestMode": {
+              "defaultValue": false,
+              "type": "Bool"
+            },
+            "SubjectPreviewLength": {
+              "defaultValue": 80,
+              "type": "Int"
+            },
+            "ServiceNowTestMode": {
+              "defaultValue": false,
+              "type": "Bool"
+            },
+            "ServiceNowUsername": {
+              "defaultValue": "svc_snow_automation",
+              "type": "String"
+            },
+            "ServiceNowSecretName": {
+              "defaultValue": "ServiceNowApiPassword",
+              "type": "String"
+            },
+            "UserSecretName": {
+              "defaultValue": "GraphClientSecret",
+              "type": "String"
+            },
+            "GraphTenantId": {
+              "defaultValue": "00000000-0000-0000-0000-000000000000",
+              "type": "String"
+            },
+            "GraphClientId": {
+              "defaultValue": "00000000-0000-0000-0000-000000000000",
+              "type": "String"
+            },
+            "DetailMessage": {
+              "defaultValue": "Submitted by Email Quarantine Campaign Remediation Logic App",
+              "type": "String"
+            },
+            "ServiceNowTestUrl": {
+              "defaultValue": "https://test-instance.example.service-now.com/api/sn_sc/servicecatalog/items/REPLACE_WITH_CATALOG_ITEM_SYS_ID/order_now",
+              "type": "String"
+            },
+            "ServiceNowProductionUrl": {
+              "defaultValue": "https://prod-instance.example.service-now.com/api/sn_sc/servicecatalog/items/REPLACE_WITH_CATALOG_ITEM_SYS_ID/order_now",
+              "type": "String"
+            },
+            "Subscription": {
+              "defaultValue": "[subscription().subscriptionId]",
+              "type": "String"
+            },
+            "Resource Group": {
+              "defaultValue": "[resourceGroup().name]",
+              "type": "String"
+            },
+            "Resource Name": {
+              "defaultValue": "sentinel-workspace",
+              "type": "String"
+            },
+            "Automation Account": {
+              "defaultValue": "security-automation",
+              "type": "String"
+            },
+            "Release Runbook Name": {
+              "defaultValue": "Release-QuarantineCampaign",
+              "type": "String"
+            },
+            "TaBl Runbook Name": {
+              "defaultValue": "Manage-TenantAllowList",
+              "type": "String"
+            },
+            "Org Name": {
+              "defaultValue": "CONTOSO",
+              "type": "String"
+            },
+            "$connections": {
+              "defaultValue": {},
+              "type": "Object"
+            }
+          },
+          "triggers": {
+            "Recurrence": {
+              "recurrence": {
+                "interval": 2,
+                "frequency": "Hour",
+                "timeZone": "Central Standard Time"
+              },
+              "evaluatedRecurrence": {
+                "interval": 2,
+                "frequency": "Hour",
+                "timeZone": "Central Standard Time"
+              },
+              "type": "Recurrence"
+            }
+          },
+          "actions": {
+            "Check_Test_Mode": {
+              "actions": {
+                "Set_Test_KQL_Query": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "KQLQuery",
+                    "value": "let LookbackPeriod = @{parameters('LookbackPeriod')};\nlet CampaignTimeWindow = @{parameters('CampaignTimeWindow')};\nlet MinRecipientCount = @{parameters('TestMin')};\nEmailEvents\n| where Timestamp >= ago(LookbackPeriod)\n| where EmailDirection == \"Inbound\"\n| extend CurrentDeliveryLocation = iff(\n    isnotempty(LatestDeliveryLocation),\n    LatestDeliveryLocation,\n    DeliveryLocation\n)\n| where CurrentDeliveryLocation =~ \"Quarantine\"\n| where LatestDeliveryAction !~ \"Quarantine release\"\n| where SenderFromAddress =~ \"@{parameters('TestSenderAddress')}\"\n| where isnotempty(InternetMessageId)\n| where isnotempty(NetworkMessageId)\n| extend SubjectNormalized = tolower(\n    trim(@\"\\s+\", replace_regex(Subject, @\"\\s+\", \" \"))\n)\n| summarize\n    Subject = any(Subject),\n    SubjectsSet = make_set(Subject, 1048576),\n    NetworkMessageId = take_any(NetworkMessageId),\n    TotalEmails = count(),\n    UniqueRecipients = dcount(RecipientEmailAddress),\n    FirstSeen = min(Timestamp),\n    LastSeen = max(Timestamp),\n    EmailClusterIdsSet = make_set(EmailClusterId, 1048576),\n    SenderFromAddressSet = make_set(SenderFromAddress, 1048576),\n    SenderFromAddressPreviewSet = make_set(SenderFromAddress, 10),\n    SenderMailFromAddressSet = make_set(SenderMailFromAddress, 1048576),\n    SenderDisplayNameSet = make_set(SenderDisplayName, 1048576),\n    SenderDisplayNamePreviewSet = make_set(SenderDisplayName, 10),\n    RecipientEmailAddressSet = make_set(RecipientEmailAddress, 1048576),\n    InternetMessageIds = make_set(InternetMessageId, 1048576)\n    by SubjectNormalized\n| where UniqueRecipients >= MinRecipientCount\n| where (LastSeen - FirstSeen) <= CampaignTimeWindow\n| extend\n    UniqueSenders = array_length(SenderFromAddressSet),\n    UniqueDisplayNames = array_length(SenderDisplayNameSet)\n| extend\n    CampaignKey = hash_sha256(SubjectNormalized),\n    EmailClusterId = tostring(EmailClusterIdsSet),\n    SenderFromAddress = strcat(\n        strcat_array(SenderFromAddressPreviewSet, \", \"),\n        iff(\n            UniqueSenders > 10,\n            strcat(\", +\", tostring(UniqueSenders - 10), \" more\"),\n            \"\"\n        )\n    ),\n    SenderDisplayName = strcat(\n        strcat_array(SenderDisplayNamePreviewSet, \", \"),\n        iff(\n            UniqueDisplayNames > 10,\n            strcat(\", +\", tostring(UniqueDisplayNames - 10), \" more\"),\n            \"\"\n        )\n    ),\n    SenderFromAddressesJson = tostring(SenderFromAddressSet),\n    SenderMailFromAddressesJson = tostring(SenderMailFromAddressSet),\n    SenderDisplayNamesJson = tostring(SenderDisplayNameSet),\n    RecipientAddressesJson = tostring(RecipientEmailAddressSet),\n    SubjectsJson = tostring(SubjectsSet),\n    InternetMessageIdsJson = tostring(InternetMessageIds),\n    DMARCResults = \"Test mode\"\n| project\n    CampaignKey,\n    NetworkMessageId,\n    EmailClusterId,\n    Subject,\n    SenderFromAddress,\n    SenderDisplayName,\n    UniqueSenders,\n    TotalEmails,\n    UniqueRecipients,\n    FirstSeen,\n    LastSeen,\n    DMARCResults,\n    InternetMessageIdsJson,\n    SenderFromAddressesJson,\n    SenderMailFromAddressesJson,\n    SenderDisplayNamesJson,\n    RecipientAddressesJson,\n    SubjectsJson\n| order by TotalEmails desc\n| serialize\n| extend CampaignNumber = row_number()"
+                  }
+                }
+              },
+              "runAfter": {
+                "Initialize_variables": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "Set_Production_KQL_Query": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "KQLQuery",
+                      "value": "let LookbackPeriod = @{parameters('LookbackPeriod')};\nlet CampaignTimeWindow = @{parameters('CampaignTimeWindow')};\nlet MinEmailCount = @{parameters('ProductionMin')};\nlet SubjectPreviewLength = @{parameters('SubjectPreviewLength')};\nlet ReleasedNetworkMessageIds = materialize(\n    union\n        (\n            EmailPostDeliveryEvents\n            | where Timestamp >= ago(CampaignTimeWindow)\n            | where Action =~ \"Quarantine release\"\n            | where ActionResult =~ \"Success\"\n            | where isnotempty(NetworkMessageId)\n            | project ReleasedNetworkMessageId = tostring(NetworkMessageId)\n        ),\n        (\n            EmailEvents\n            | where Timestamp >= ago(CampaignTimeWindow)\n            | where isnotempty(NetworkMessageId)\n            | where\n                LatestDeliveryAction =~ \"Quarantine release\"\n                or (\n                    isnotempty(LatestDeliveryLocation)\n                    and LatestDeliveryLocation !~ \"Quarantine\"\n                )\n            | project ReleasedNetworkMessageId = tostring(NetworkMessageId)\n        )\n    | distinct ReleasedNetworkMessageId\n);\nlet MessageFirstSeenMap = materialize(\n    EmailEvents\n    | where Timestamp >= ago(CampaignTimeWindow)\n    | where EmailDirection == \"Inbound\"\n    | where isnotempty(NetworkMessageId)\n    | extend NetworkMessageId = tostring(NetworkMessageId)\n    | summarize MessageFirstSeen = min(Timestamp) by NetworkMessageId\n);\nlet BaseEvents = materialize(\n    EmailEvents\n    | where Timestamp >= ago(CampaignTimeWindow)\n    | where EmailDirection == \"Inbound\"\n    | where isnotempty(NetworkMessageId)\n    | extend NetworkMessageId = tostring(NetworkMessageId)\n    | join kind=leftanti ReleasedNetworkMessageIds on\n        $left.NetworkMessageId == $right.ReleasedNetworkMessageId\n    | extend CurrentDeliveryLocation = iff(\n        isnotempty(LatestDeliveryLocation),\n        LatestDeliveryLocation,\n        DeliveryLocation\n    )\n    | where CurrentDeliveryLocation =~ \"Quarantine\"\n    | where LatestDeliveryAction !~ \"Quarantine release\"\n    | where SenderFromDomain =~ \"@{parameters('ProductionDomain')}\"\n    | where ThreatTypes !has \"Phish\"\n    | where ThreatTypes !has \"Malware\"\n    | extend ParsedAuth = parse_json(AuthenticationDetails)\n    | extend DMARC = tostring(ParsedAuth.DMARC)\n    | where DMARC !~ \"pass\"\n    | where isnotempty(InternetMessageId)\n    | where isnotempty(SenderFromAddress)\n    | summarize arg_max(Timestamp, *) by NetworkMessageId\n    | join kind=leftouter MessageFirstSeenMap on NetworkMessageId\n    | extend\n        SubjectClean = iff(\n            isnotempty(Subject),\n            trim(@\"\\s+\", replace_regex(Subject, @\"\\s+\", \" \")),\n            \"[No subject]\"\n        ),\n        SubjectNormalized = tolower(\n            trim(@\"\\s+\", replace_regex(Subject, @\"\\s+\", \" \"))\n        ),\n        SenderFromAddressNormalized = tolower(\n            trim(@\"\\s+\", SenderFromAddress)\n        ),\n        EmailClusterIdNormalized = tostring(EmailClusterId)\n    | extend\n        SubjectNode = iff(\n            isnotempty(SubjectNormalized),\n            strcat(\"subject|\", SubjectNormalized),\n            strcat(\"subject|missing|\", NetworkMessageId)\n        ),\n        SenderNode = strcat(\n            \"sender|\",\n            SenderFromAddressNormalized\n        )\n    | extend\n        ClusterNode = iff(\n            isnotempty(EmailClusterIdNormalized),\n            strcat(\"cluster|\", EmailClusterIdNormalized),\n            strcat(\"cluster|missing|\", SubjectNode)\n        )\n    | project\n        Timestamp,\n        MessageFirstSeen,\n        EmailClusterId,\n        SubjectClean,\n        SubjectNormalized,\n        SubjectNode,\n        ClusterNode,\n        SenderNode,\n        SenderFromAddress,\n        SenderMailFromAddress,\n        SenderMailFromDomain,\n        SenderDisplayName,\n        RecipientEmailAddress,\n        InternetMessageId,\n        NetworkMessageId,\n        DeliveryLocation,\n        LatestDeliveryLocation,\n        LatestDeliveryAction,\n        CurrentDeliveryLocation,\n        DMARC\n);\nlet CampaignEdges =\n    union\n        (\n            BaseEvents\n            | project\n                SourceNode = SubjectNode,\n                TargetNode = ClusterNode\n        ),\n        (\n            BaseEvents\n            | project\n                SourceNode = SubjectNode,\n                TargetNode = SenderNode\n        )\n    | distinct SourceNode, TargetNode;\nlet SubjectComponentMap =\n    CampaignEdges\n    | make-graph SourceNode --> TargetNode with_node_id=NodeId\n    | graph-mark-components kind=weak with_component_id=CampaignComponent\n    | graph-to-table nodes\n    | where NodeId startswith \"subject|\"\n    | project\n        SubjectNode = NodeId,\n        CampaignComponent;\nlet CampaignEvents = materialize(\n    BaseEvents\n    | join kind=leftanti ReleasedNetworkMessageIds on\n        $left.NetworkMessageId == $right.ReleasedNetworkMessageId\n    | join kind=inner SubjectComponentMap on SubjectNode\n    | where CurrentDeliveryLocation =~ \"Quarantine\"\n    | where LatestDeliveryAction !~ \"Quarantine release\"\n);\nlet ClusterSubjectRepresentatives = materialize(\n    CampaignEvents\n    | summarize\n        arg_min(\n            MessageFirstSeen,\n            SubjectClean,\n            SubjectNormalized,\n            NetworkMessageId\n        )\n        by CampaignComponent, ClusterNode\n);\nlet CampaignSubjectPreviews =\n    ClusterSubjectRepresentatives\n    | summarize\n        arg_min(MessageFirstSeen, SubjectClean),\n        ClusterCount = count()\n        by CampaignComponent, SubjectNormalized\n    | extend SubjectPreview = iff(\n        strlen(SubjectClean) > SubjectPreviewLength,\n        strcat(\n            substring(SubjectClean, 0, SubjectPreviewLength),\n            \"...\"\n        ),\n        SubjectClean\n    )\n    | order by CampaignComponent asc, MessageFirstSeen asc\n    | summarize\n        SubjectPreviews = make_list(SubjectPreview, 1048576),\n        PreviewSubjectCount = count(),\n        UniqueClusters = sum(ClusterCount)\n        by CampaignComponent;\nlet CampaignPreviewMessages =\n    ClusterSubjectRepresentatives\n    | order by CampaignComponent asc, MessageFirstSeen asc\n    | summarize\n        PreviewNetworkMessageIds = make_list(\n            NetworkMessageId,\n            1048576\n        )\n        by CampaignComponent;\nCampaignEvents\n| summarize\n    SubjectsSet = make_set(SubjectClean, 1048576),\n    NetworkMessageId = take_any(NetworkMessageId),\n    TotalEmails = count(),\n    UniqueRecipients = dcount(RecipientEmailAddress),\n    FirstSeen = min(MessageFirstSeen),\n    LastSeen = max(MessageFirstSeen),\n    EmailClusterIdsSet = make_set(EmailClusterId, 1048576),\n    SenderFromAddressSet = make_set(SenderFromAddress, 1048576),\n    SenderFromAddressPreviewSet = make_set(\n        SenderFromAddress,\n        1048576\n    ),\n    SenderMailFromAddressSet = make_set(\n        SenderMailFromAddress,\n        1048576\n    ),\n    SenderMailFromAddressPreviewSet = make_set(\n        SenderMailFromAddress,\n        1048576\n    ),\n    SenderMailFromDomainSet = make_set(\n        SenderMailFromDomain,\n        1048576\n    ),\n    SenderMailFromDomainPreviewSet = make_set(\n        SenderMailFromDomain,\n        1048576\n    ),\n    SenderDisplayNameSet = make_set(\n        SenderDisplayName,\n        1048576\n    ),\n    SenderDisplayNamePreviewSet = make_set(\n        SenderDisplayName,\n        1048576\n    ),\n    RecipientEmailAddressSet = make_set(\n        RecipientEmailAddress,\n        1048576\n    ),\n    DMARCResultsSet = make_set(DMARC, 1048576),\n    InternetMessageIds = make_set(InternetMessageId, 1048576)\n    by CampaignComponent\n| where LastSeen >= ago(LookbackPeriod)\n| where TotalEmails >= MinEmailCount\n| where (LastSeen - FirstSeen) <= CampaignTimeWindow\n| join kind=leftouter CampaignSubjectPreviews on CampaignComponent\n| join kind=leftouter CampaignPreviewMessages on CampaignComponent\n| extend\n    SubjectVariants = array_length(SubjectsSet),\n    UniqueSenders = array_length(SenderFromAddressSet),\n    UniqueMailFromAddresses = array_length(SenderMailFromAddressSet),\n    UniqueMailFromDomains = array_length(SenderMailFromDomainSet),\n    UniqueDisplayNames = array_length(SenderDisplayNameSet)\n| extend\n    CampaignKey = hash_sha256(\n        strcat(\n            \"subject-cluster-sender|\",\n            tostring(CampaignComponent)\n        )\n    ),\n    Subject = strcat(\n        '\"',\n        strcat_array(SubjectPreviews, '\", \"'),\n        '\"'\n    ),\n    EmailClusterId = tostring(EmailClusterIdsSet),\n    SenderFromAddress = strcat(\n        strcat_array(SenderFromAddressPreviewSet, \", \"),\n        iff(\n            UniqueSenders > 10,\n            strcat(\n                \", +\",\n                tostring(UniqueSenders - 10),\n                \" more\"\n            ),\n            \"\"\n        )\n    ),\n    SenderMailFromAddress = strcat(\n        strcat_array(SenderMailFromAddressPreviewSet, \", \"),\n        iff(\n            UniqueMailFromAddresses > 10,\n            strcat(\n                \", +\",\n                tostring(UniqueMailFromAddresses - 10),\n                \" more\"\n            ),\n            \"\"\n        )\n    ),\n    SenderMailFromDomain = strcat(\n        strcat_array(SenderMailFromDomainPreviewSet, \", \"),\n        iff(\n            UniqueMailFromDomains > 10,\n            strcat(\n                \", +\",\n                tostring(UniqueMailFromDomains - 10),\n                \" more\"\n            ),\n            \"\"\n        )\n    ),\n    SenderDisplayName = strcat(\n        strcat_array(SenderDisplayNamePreviewSet, \", \"),\n        iff(\n            UniqueDisplayNames > 10,\n            strcat(\n                \", +\",\n                tostring(UniqueDisplayNames - 10),\n                \" more\"\n            ),\n            \"\"\n        )\n    ),\n    PreviewNetworkMessageIdsJson = tostring(\n        PreviewNetworkMessageIds\n    ),\n    SubjectsJson = tostring(SubjectsSet),\n    SubjectPreviewsJson = tostring(SubjectPreviews),\n    SenderFromAddressesJson = tostring(SenderFromAddressSet),\n    SenderMailFromAddressesJson = tostring(SenderMailFromAddressSet),\n    SenderMailFromDomainsJson = tostring(SenderMailFromDomainSet),\n    SenderDisplayNamesJson = tostring(SenderDisplayNameSet),\n    RecipientAddressesJson = tostring(RecipientEmailAddressSet),\n    InternetMessageIdsJson = tostring(InternetMessageIds),\n    DMARCResults = tostring(DMARCResultsSet)\n| project\n    CampaignKey,\n    NetworkMessageId,\n    PreviewNetworkMessageIdsJson,\n    EmailClusterId,\n    Subject,\n    SubjectVariants,\n    PreviewSubjectCount,\n    UniqueClusters,\n    SenderFromAddress,\n    SenderMailFromAddress,\n    SenderMailFromDomain,\n    SenderDisplayName,\n    UniqueSenders,\n    UniqueMailFromAddresses,\n    TotalEmails,\n    UniqueRecipients,\n    FirstSeen,\n    LastSeen,\n    DMARCResults,\n    InternetMessageIdsJson,\n    SenderFromAddressesJson,\n    SenderMailFromAddressesJson,\n    SenderMailFromDomainsJson,\n    SenderDisplayNamesJson,\n    RecipientAddressesJson,\n    SubjectsJson,\n    SubjectPreviewsJson\n| order by TotalEmails desc\n| serialize\n| extend CampaignNumber = row_number()"
+                    }
+                  }
+                }
+              },
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@parameters('TestMode')",
+                      true
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            },
+            "Initialize_variables": {
+              "runAfter": {},
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "CampaignResults",
+                    "type": "array"
+                  },
+                  {
+                    "name": "SelectedInternetMessageIds",
+                    "type": "array"
+                  },
+                  {
+                    "name": "KQLQuery",
+                    "type": "string"
+                  },
+                  {
+                    "name": "PowerShellIdLiterals",
+                    "type": "array"
+                  },
+                  {
+                    "name": "SelectedSenderAddresses",
+                    "type": "array"
+                  },
+                  {
+                    "name": "TaBlChecklist",
+                    "type": "array"
+                  },
+                  {
+                    "name": "CampaignDepartments",
+                    "type": "array"
+                  },
+                  {
+                    "name": "SuccessfulReleases",
+                    "type": "array"
+                  },
+                  {
+                    "name": "FailedReleases",
+                    "type": "array"
+                  }
+                ]
+              }
+            },
+            "Run_Query": {
+              "runAfter": {
+                "Check_Test_Mode": [
+                  "Succeeded"
+                ]
+              },
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['azuremonitorlogs']['connectionId']"
+                  }
+                },
+                "method": "post",
+                "body": {
+                  "query": "@variables('KQLQuery')",
+                  "timerangetype": "@parameters('CampaignTimeWindow')",
+                  "timerange": "@parameters('CampaignTimeWindow')"
+                },
+                "path": "/queryDataV2",
+                "queries": {
+                  "subscriptions": "@parameters('Subscription')",
+                  "resourcegroups": "@parameters('Resource Group')",
+                  "resourcetype": "Log Analytics Workspace",
+                  "resourcename": "@parameters('Resource Name')"
+                }
+              }
+            },
+            "Set_Campaign_Results": {
+              "runAfter": {
+                "Run_Query": [
+                  "Succeeded"
+                ]
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "CampaignResults",
+                "value": "@body('Run_Query')?['value']"
+              }
+            },
+            "Check_Campaigns_Found": {
+              "actions": {},
+              "runAfter": {
+                "Compose_Preview_Query": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "No_Campaigns": {
+                    "type": "Terminate",
+                    "inputs": {
+                      "runStatus": "Succeeded"
+                    }
+                  }
+                }
+              },
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@length(variables('CampaignResults'))",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            },
+            "Select_Campaign_Choices": {
+              "runAfter": {
+                "Check_Campaigns_Found": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Select",
+              "inputs": {
+                "from": "@variables('CampaignResults')",
+                "select": {
+                  "title": "@concat(\n    string(item()?['CampaignNumber']),\n    ' - [',\n    coalesce(item()?['Subject'], '[No subject]'),\n    '] | From: ',\n    coalesce(item()?['SenderFromAddress'], '[Unknown sender]'),\n    ' | ',\n    string(item()?['TotalEmails']),\n    if(equals(item()?['TotalEmails'], 1), ' email', ' emails'),\n    ' | ',\n    string(item()?['UniqueRecipients']),\n    if(equals(item()?['UniqueRecipients'], 1), ' recipient', ' recipients')\n)",
+                  "value": "@item()?['CampaignKey']"
+                }
+              }
+            },
+            "Post_Campaign_Selection_Card": {
+              "runAfter": {
+                "Post_Hunting_Query": [
+                  "Succeeded"
+                ]
+              },
+              "type": "ApiConnectionWebhook",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['teams']['connectionId']"
+                  }
+                },
+                "body": {
+                  "notificationUrl": "@listCallbackUrl()",
+                  "body": {
+                    "messageBody": "{\n  \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n  \"type\": \"AdaptiveCard\",\n  \"version\": \"1.4\",\n  \"msteams\": {\n    \"width\": \"Full\"\n  },\n  \"body\": [\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Quarantined Campaign Review\",\n      \"weight\": \"Bolder\",\n      \"size\": \"Large\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"@{if(parameters('TestMode'), 'TEST MODE — showing quarantined messages from the configured test sender.', 'PRODUCTION MODE — showing quarantined inbound spoofing campaigns that failed DMARC.')}\",\n      \"wrap\": true,\n      \"color\": \"@{if(parameters('TestMode'), 'Warning', 'Default')}\"\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"@{if(parameters('AutomatedRelease'), 'Selected campaigns will be released automatically.', 'A PowerShell release command will be generated for the selected campaigns.')}\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"The Advanced Hunting preview query was posted immediately before this card.\",\n      \"wrap\": true,\n      \"isSubtle\": true,\n      \"spacing\": \"Small\"\n    },\n    {\n      \"type\": \"Input.ChoiceSet\",\n      \"id\": \"selectedCampaigns\",\n      \"label\": \"Select the campaigns to release\",\n      \"isMultiSelect\": true,\n      \"style\": \"expanded\",\n      \"wrap\": true,\n      \"isRequired\": true,\n      \"errorMessage\": \"Select at least one campaign.\",\n      \"choices\": @{body('Select_Campaign_Choices')}\n    },\n    {\n      \"type\": \"Input.Text\",\n      \"id\": \"analystNotes\",\n      \"label\": \"Analyst notes\",\n      \"isMultiline\": true,\n      \"isRequired\": false,\n      \"placeholder\": \"Optional reason or investigation notes\"\n    }\n  ],\n  \"actions\": [\n    {\n      \"type\": \"Action.Submit\",\n      \"title\": \"@{if(parameters('AutomatedRelease'), 'Release Selected Campaigns', 'Generate Release Command')}\",\n      \"associatedInputs\": \"auto\",\n      \"data\": {\n        \"decision\": \"approve\"\n      }\n    },\n    {\n      \"type\": \"Action.Submit\",\n      \"title\": \"Skip\",\n      \"associatedInputs\": \"none\",\n      \"data\": {\n        \"decision\": \"skip\"\n      }\n    }\n  ]\n}",
+                    "updateMessage": "Response Submitted.",
+                    "recipient": {
+                      "groupId": "@parameters('ProductionTeam')",
+                      "channelId": "@if(parameters('TeamsTestMode'), parameters('TestChannel'), parameters('ProductionChannel'))"
+                    }
+                  }
+                },
+                "path": "/v1.0/teams/conversation/gatherinput/poster/Flow bot/location/@{encodeURIComponent('Channel')}/$subscriptions"
+              }
+            },
+            "Compose_Selected_Campaign_Keys": {
+              "runAfter": {
+                "Check_Skip": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@split(\n    coalesce(\n        body('Post_Campaign_Selection_Card')?['data']?['selectedCampaigns'],\n        ''\n    ),\n    ','\n)"
+            },
+            "Filter_Selected_Campaigns": {
+              "runAfter": {
+                "Compose_Selected_Campaign_Keys": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Query",
+              "inputs": {
+                "from": "@variables('CampaignResults')",
+                "where": "@contains(outputs('Compose_Selected_Campaign_Keys'), item()?['CampaignKey'])"
+              }
+            },
+            "For_each_Selected_Campaign": {
+              "foreach": "@body('Filter_Selected_Campaigns')",
+              "actions": {
+                "For_each_Internet_Message_ID": {
+                  "foreach": "@json(items('For_each_Selected_Campaign')?['InternetMessageIdsJson'])",
+                  "actions": {
+                    "Append_to_Selected_Internet_Message_IDs": {
+                      "type": "AppendToArrayVariable",
+                      "inputs": {
+                        "name": "SelectedInternetMessageIds",
+                        "value": "@item()"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Post_Ticket_Preview": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Foreach"
+                },
+                "For_each_Campaign_Sender": {
+                  "foreach": "@json(\n    coalesce(\n        items('For_each_Selected_Campaign')?['SenderFromAddressesJson'],\n        '[]'\n    )\n)",
+                  "actions": {
+                    "Append_to_array_variable": {
+                      "type": "AppendToArrayVariable",
+                      "inputs": {
+                        "name": "SelectedSenderAddresses",
+                        "value": "@toLower(trim(string(items('For_each_Campaign_Sender'))))"
+                      }
+                    },
+                    "Append_to_Campaign_Departments": {
+                      "runAfter": {
+                        "Find_Campaign_Sender_in_Entra": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "AppendToArrayVariable",
+                      "inputs": {
+                        "name": "CampaignDepartments",
+                        "value": "@if(\n    empty(\n        outputs('Find_Campaign_Sender_in_Entra')?['body']?['value']\n    ),\n    'Unknown department',\n    if(\n        empty(\n            first(\n                outputs('Find_Campaign_Sender_in_Entra')?['body']?['value']\n            )?['department']\n        ),\n        'Unknown department',\n        first(\n            outputs('Find_Campaign_Sender_in_Entra')?['body']?['value']\n        )?['department']\n    )\n)"
+                      }
+                    },
+                    "Find_Campaign_Sender_in_Entra": {
+                      "runAfter": {
+                        "Append_to_array_variable": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "https://graph.microsoft.com/v1.0/users",
+                        "method": "GET",
+                        "headers": {
+                          "Accept": "application/json",
+                          "ConsistencyLevel": "eventual"
+                        },
+                        "queries": {
+                          "$count": "true",
+                          "$filter": "@{concat('mail eq ', decodeUriComponent('%27'), items('For_each_Campaign_Sender'), decodeUriComponent('%27'), ' or userPrincipalName eq ', decodeUriComponent('%27'), items('For_each_Campaign_Sender'), decodeUriComponent('%27'), ' or onPremisesSamAccountName eq ', decodeUriComponent('%27'), first(split(items('For_each_Campaign_Sender'), '@')), decodeUriComponent('%27'))}",
+                          "$select": "department,displayName,mail,userPrincipalName,onPremisesSamAccountName",
+                          "$top": "1"
+                        },
+                        "authentication": {
+                          "type": "ActiveDirectoryOAuth",
+                          "authority": "https://login.microsoftonline.com",
+                          "tenant": "@{parameters('GraphTenantId')}",
+                          "audience": "https://graph.microsoft.com",
+                          "clientId": "@{parameters('GraphClientId')}",
+                          "secret": "@{body('Get_User_Secret')?['value']}"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Clear_Campaign_Departments": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Foreach"
+                },
+                "Clear_Campaign_Departments": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "CampaignDepartments",
+                    "value": "@json('[]')"
+                  }
+                },
+                "Unique_Campaign_Departments": {
+                  "runAfter": {
+                    "For_each_Campaign_Sender": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Compose",
+                  "inputs": "@union(\n    variables('CampaignDepartments'),\n    variables('CampaignDepartments')\n)"
+                },
+                "Campaign_Vendor": {
+                  "runAfter": {
+                    "Unique_Campaign_Departments": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Compose",
+                  "inputs": "@join(\n    outputs('Unique_Campaign_Departments'),\n    ', '\n)"
+                },
+                "Create_ServiceNow_DMARC_Ticket": {
+                  "runAfter": {
+                    "ServiceNow_Ticket_Notes": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Http",
+                  "inputs": {
+                    "uri": "@if(\n    parameters('ServiceNowTestMode'),\n    parameters('ServiceNowTestUrl'),\n    parameters('ServiceNowProductionUrl')\n)",
+                    "method": "POST",
+                    "headers": {
+                      "Accept": "application/json",
+                      "Content-Type": "application/json"
+                    },
+                    "body": {
+                      "sysparm_quantity": "1",
+                      "variables": {
+                        "vendor": "@{outputs('Campaign_Vendor')}",
+                        "details": "@{parameters('DetailMessage')}",
+                        "notes": "@{outputs('ServiceNow_Ticket_Notes')}",
+                        "rush_request": "false"
+                      }
+                    },
+                    "authentication": {
+                      "type": "Basic",
+                      "username": "@{parameters('ServiceNowUsername')}",
+                      "password": "@{body('Get_ServiceNow_Secret')?['value']}"
+                    }
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "ServiceNow_Ticket_Notes": {
+                  "runAfter": {
+                    "Compose": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Compose",
+                  "inputs": "@concat(\n    'Sender Address(es): ',\n    join(\n        json(items('For_each_Selected_Campaign')?['SenderFromAddressesJson']),\n        ', '\n    ),\n    decodeUriComponent('%0A%0A%0A'),\n    'Sender Mail From Address(es): ',\n    join(\n        json(items('For_each_Selected_Campaign')?['SenderMailFromAddressesJson']),\n        ', '\n    ),\n    decodeUriComponent('%0A%0A%0A'),\n    'Recipient Address(es): ',\n    join(\n        json(items('For_each_Selected_Campaign')?['RecipientAddressesJson']),\n        ', '\n    ),\n    decodeUriComponent('%0A%0A%0A'),\n    'Email Subject(s): ',\n    join(\n        json(items('For_each_Selected_Campaign')?['SubjectsJson']),\n        ' | '\n    ),\n    if(\n        empty(\n            body('Post_Campaign_Selection_Card')?['data']?['analystNotes']\n        ),\n        '',\n        concat(\n            decodeUriComponent('%0A%0A%0A'),\n            'Analyst Notes: ',\n            body('Post_Campaign_Selection_Card')?['data']?['analystNotes']\n        )\n    )\n)"
+                },
+                "Post_Ticket_Preview": {
+                  "runAfter": {
+                    "Create_ServiceNow_DMARC_Ticket": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "ApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connection": {
+                        "name": "@parameters('$connections')['teams-6']['connectionId']"
+                      }
+                    },
+                    "method": "post",
+                    "body": {
+                      "recipient": {
+                        "groupId": "@parameters('ProductionTeam')",
+                        "channelId": "@if(parameters('TeamsTestMode'), parameters('TestChannel'), parameters('ProductionChannel'))"
+                      },
+                      "messageBody": "{\n  \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n  \"type\": \"AdaptiveCard\",\n  \"version\": \"1.4\",\n  \"msteams\": {\n    \"width\": \"Full\"\n  },\n  \"body\": [\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"DMARC Ticket Submitted\",\n      \"weight\": \"Bolder\",\n      \"size\": \"Large\",\n      \"wrap\": true,\n      \"color\": \"Good\"\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"@{if(parameters('ServiceNowTestMode'), 'TEST SERVICENOW', 'PRODUCTION SERVICENOW')}\",\n      \"weight\": \"Bolder\",\n      \"color\": \"@{if(parameters('ServiceNowTestMode'), 'Warning', 'Default')}\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"FactSet\",\n      \"facts\": [\n        {\n          \"title\": \"Campaign:\",\n          \"value\": \"@{string(items('For_each_Selected_Campaign')?['CampaignNumber'])}\"\n        },\n        {\n          \"title\": \"Quantity:\",\n          \"value\": \"1\"\n        },\n        {\n          \"title\": \"Rush request:\",\n          \"value\": \"False\"\n        }\n      ]\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Service/Vendor\",\n      \"weight\": \"Bolder\",\n      \"spacing\": \"Medium\",\n      \"separator\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"@{outputs('Campaign_Vendor')}\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Notes\",\n      \"weight\": \"Bolder\",\n      \"spacing\": \"Medium\",\n      \"separator\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"@{outputs('ServiceNow_Ticket_Notes')}\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Details\",\n      \"weight\": \"Bolder\",\n      \"spacing\": \"Medium\",\n      \"separator\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"@{parameters('DetailMessage')}\",\n      \"wrap\": true\n    }\n  ]\n}"
+                    },
+                    "path": "/v1.0/teams/conversation/adaptivecard/poster/Flow bot/location/@{encodeURIComponent('Channel')}"
+                  }
+                },
+                "Compose": {
+                  "runAfter": {
+                    "Campaign_Vendor": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Compose",
+                  "inputs": "@concat(\n    'SenderFromAddressesJson: ',\n    string(items('For_each_Selected_Campaign')?['SenderFromAddressesJson']),\n    decodeUriComponent('%0A'),\n    'SenderMailFromAddressesJson: ',\n    string(items('For_each_Selected_Campaign')?['SenderMailFromAddressesJson']),\n    decodeUriComponent('%0A'),\n    'RecipientAddressesJson: ',\n    string(items('For_each_Selected_Campaign')?['RecipientAddressesJson']),\n    decodeUriComponent('%0A'),\n    'SubjectsJson: ',\n    string(items('For_each_Selected_Campaign')?['SubjectsJson'])\n)"
+                }
+              },
+              "runAfter": {
+                "Get_User_Secret": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Foreach"
+            },
+            "Compose_Unique_Internet_Message_IDs": {
+              "runAfter": {
+                "Unique_Selected_Senders": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@union(\n    variables('SelectedInternetMessageIds'),\n    variables('SelectedInternetMessageIds')\n)"
+            },
+            "Check_Automated_Release": {
+              "actions": {
+                "Get_Releases_Output": {
+                  "runAfter": {
+                    "Release_Messages": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "ApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connection": {
+                        "name": "@parameters('$connections')['azureautomation']['connectionId']"
+                      }
+                    },
+                    "method": "get",
+                    "path": "/subscriptions/@{encodeURIComponent(parameters('Subscription'))}/resourceGroups/@{encodeURIComponent(parameters('Resource Group'))}/providers/Microsoft.Automation/automationAccounts/@{encodeURIComponent(parameters('Automation Account'))}/jobs/@{encodeURIComponent(body('Release_Messages')?['properties']?['jobId'])}/output",
+                    "queries": {
+                      "x-ms-api-version": "2015-10-31"
+                    }
+                  }
+                },
+                "Parse_Releases_Output": {
+                  "runAfter": {
+                    "Get_Releases_Output": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "ParseJson",
+                  "inputs": {
+                    "content": "@body('Get_Releases_Output')",
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "Status": {
+                          "type": "string"
+                        },
+                        "Actions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "Total": {
+                          "type": "integer"
+                        },
+                        "SuccessfulCount": {
+                          "type": "integer"
+                        },
+                        "FailedCount": {
+                          "type": "integer"
+                        },
+                        "FailedMessageIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "Results": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "InternetMessageId": {
+                                "type": "string"
+                              },
+                              "Status": {
+                                "type": "string"
+                              },
+                              "Result": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "Verified": {
+                                "type": "boolean"
+                              },
+                              "ReleaseAttempted": {
+                                "type": "boolean"
+                              },
+                              "VerificationAttempts": {
+                                "type": "integer"
+                              },
+                              "Error": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "Error": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "Check_for_Fails": {
+                  "actions": {
+                    "Post_Success_Card": {
+                      "type": "ApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connection": {
+                            "name": "@parameters('$connections')['teams-7']['connectionId']"
+                          }
+                        },
+                        "method": "post",
+                        "body": {
+                          "recipient": {
+                            "groupId": "@parameters('ProductionTeam')",
+                            "channelId": "@if(parameters('TeamsTestMode'), parameters('TestChannel'), parameters('ProductionChannel'))"
+                          },
+                          "messageBody": "{\n  \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n  \"type\": \"AdaptiveCard\",\n  \"version\": \"1.4\",\n  \"msteams\": {\n    \"width\": \"Full\"\n  },\n  \"body\": [\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Quarantine Release Complete\",\n      \"weight\": \"Bolder\",\n      \"size\": \"Medium\"\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"All selected messages were successfully released from quarantine and verified.\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"**Released:** @{body('Parse_Releases_Output')?['SuccessfulCount']}\",\n      \"wrap\": true\n    }\n  ]\n}"
+                        },
+                        "path": "/v1.0/teams/conversation/adaptivecard/poster/Flow bot/location/@{encodeURIComponent('Channel')}"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Parse_Releases_Output": [
+                      "Succeeded"
+                    ]
+                  },
+                  "else": {
+                    "actions": {
+                      "Post_Fail_Card": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                          "host": {
+                            "connection": {
+                              "name": "@parameters('$connections')['teams-7']['connectionId']"
+                            }
+                          },
+                          "method": "post",
+                          "body": {
+                            "recipient": {
+                              "groupId": "@parameters('ProductionTeam')",
+                              "channelId": "@if(parameters('TeamsTestMode'), parameters('TestChannel'), parameters('ProductionChannel'))"
+                            },
+                            "messageBody": "{\n  \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n  \"type\": \"AdaptiveCard\",\n  \"version\": \"1.4\",\n  \"msteams\": {\n    \"width\": \"Full\"\n  },\n  \"body\": [\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Quarantine Release Incomplete\",\n      \"weight\": \"Bolder\",\n      \"size\": \"Medium\"\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"One or more selected messages could not be released or verified.\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"**Released:** @{body('Parse_Releases_Output')?['SuccessfulCount']}\\n\\n**Failed:** @{body('Parse_Releases_Output')?['FailedCount']}\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"**Failed Message IDs**\",\n      \"weight\": \"Bolder\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"@{join(body('Parse_Releases_Output')?['FailedMessageIds'], decodeUriComponent('%0A'))}\",\n      \"wrap\": true\n    }\n  ]\n}"
+                          },
+                          "path": "/v1.0/teams/conversation/adaptivecard/poster/Flow bot/location/@{encodeURIComponent('Channel')}"
+                        }
+                      }
+                    }
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@body('Parse_Releases_Output')?['FailedCount']",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "type": "If"
+                },
+                "Release_Messages": {
+                  "type": "ApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connection": {
+                        "name": "@parameters('$connections')['azureautomation']['connectionId']"
+                      }
+                    },
+                    "method": "put",
+                    "body": {
+                      "properties": {
+                        "parameters": {
+                          "InternetMessageId": "@join(outputs('Compose_Unique_Internet_Message_IDs'), '|||')",
+                          "Actions": "release,check"
+                        }
+                      }
+                    },
+                    "path": "/subscriptions/@{encodeURIComponent(parameters('Subscription'))}/resourceGroups/@{encodeURIComponent(parameters('Resource Group'))}/providers/Microsoft.Automation/automationAccounts/@{encodeURIComponent('security-automation')}/jobs",
+                    "queries": {
+                      "x-ms-api-version": "2015-10-31",
+                      "runbookName": "@parameters('Release Runbook Name')",
+                      "wait": true
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Compose_Unique_Internet_Message_IDs": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "For_each_Unique_Message_ID": {
+                    "foreach": "@outputs('Compose_Unique_Internet_Message_IDs')",
+                    "actions": {
+                      "Append_to_PowerShell_ID_Literals": {
+                        "type": "AppendToArrayVariable",
+                        "inputs": {
+                          "name": "PowerShellIdLiterals",
+                          "value": "@concat(\n    decodeUriComponent('%27'),\n    replace(\n        replace(\n            replace(\n                string(item()),\n                decodeUriComponent('%0D'),\n                ''\n            ),\n            decodeUriComponent('%0A'),\n            ''\n        ),\n        decodeUriComponent('%27'),\n        concat(\n            decodeUriComponent('%27'),\n            decodeUriComponent('%27')\n        )\n    ),\n    decodeUriComponent('%27')\n)"
+                        }
+                      }
+                    },
+                    "type": "Foreach"
+                  },
+                  "Compose_PowerShell_Command": {
+                    "runAfter": {
+                      "For_each_Unique_Message_ID": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "Compose",
+                    "inputs": "@concat(\n    'Connect-IPPSSession -DisableWAM;', decodeUriComponent('%0A'),\n    '$MessageIds = @(', decodeUriComponent('%0A'),\n    join(variables('PowerShellIdLiterals'), concat(',', decodeUriComponent('%0A'))), decodeUriComponent('%0A'),\n    ');', decodeUriComponent('%0A'),\n    'foreach ($id in $MessageIds) { Get-QuarantineMessage -MessageID $id | Release-QuarantineMessage -ReleaseToAll -Force; Start-Sleep -Milliseconds 100 }'\n)"
+                  },
+                  "Compose_PowerShell_Command_HTML": {
+                    "runAfter": {
+                      "Compose_PowerShell_Command": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "Compose",
+                    "inputs": "@replace(\n    replace(\n        replace(\n            replace(\n                outputs('Compose_PowerShell_Command'),\n                '&',\n                '&amp;'\n            ),\n            '<',\n            '&lt;'\n        ),\n        '>',\n        '&gt;'\n    ),\n    decodeUriComponent('%0A'),\n    '<br>'\n)"
+                  },
+                  "Post_Manual_Release_Command": {
+                    "runAfter": {
+                      "Compose_PowerShell_Command_HTML": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "ApiConnection",
+                    "inputs": {
+                      "host": {
+                        "connection": {
+                          "name": "@parameters('$connections')['teams-1']['connectionId']"
+                        }
+                      },
+                      "method": "post",
+                      "body": {
+                        "recipient": {
+                          "groupId": "@parameters('ProductionTeam')",
+                          "channelId": "@if(parameters('TeamsTestMode'), parameters('TestChannel'), parameters('ProductionChannel'))"
+                        },
+                        "messageBody": "<p class=\"editor-paragraph\">@{concat(\n    'Copy and run the following command in an authorized PowerShell session:<br></p><pre><code>',\n    outputs('Compose_PowerShell_Command_HTML'),\n    '</code></pre>'\n)}<p></p>"
+                      },
+                      "path": "/beta/teams/conversation/message/poster/Flow bot/location/@{encodeURIComponent('Channel')}"
+                    }
+                  }
+                }
+              },
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@parameters('AutomatedRelease')",
+                      true
+                    ]
+                  },
+                  {
+                    "equals": [
+                      "@parameters('AllowRemediations')",
+                      true
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            },
+            "Select_Preview_Network_Message_IDs": {
+              "runAfter": {
+                "Set_Campaign_Results": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Select",
+              "inputs": {
+                "from": "@variables('CampaignResults')",
+                "select": "@item()?['PreviewNetworkMessageIdsJson']"
+              }
+            },
+            "Compose_Preview_Query": {
+              "runAfter": {
+                "Select_Preview_Network_Message_IDs": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@concat(\n    'let CampaignGroups = dynamic([',\n    join(body('Select_Preview_Network_Message_IDs'), ', '),\n    ']);',\n    decodeUriComponent('%0A'),\n    'let MessageOrder = materialize(',\n    decodeUriComponent('%0A'),\n    '    print Groups = CampaignGroups',\n    decodeUriComponent('%0A'),\n    '    | mv-expand with_itemindex=CampaignSortOrder CampaignGroup = Groups',\n    decodeUriComponent('%0A'),\n    '    | mv-expand NetworkMessageId = CampaignGroup',\n    decodeUriComponent('%0A'),\n    '    | project NetworkMessageId = tostring(NetworkMessageId), CampaignSortOrder',\n    decodeUriComponent('%0A'),\n    ');',\n    decodeUriComponent('%0A'),\n    'EmailEvents',\n    decodeUriComponent('%0A'),\n    '| extend CurrentDeliveryLocation = iff(isnotempty(LatestDeliveryLocation), LatestDeliveryLocation, DeliveryLocation)',\n    decodeUriComponent('%0A'),\n    '| where CurrentDeliveryLocation =~ \"Quarantine\"',\n    decodeUriComponent('%0A'),\n    '| where LatestDeliveryAction !~ \"Quarantine release\"',\n    decodeUriComponent('%0A'),\n    '| join kind=inner MessageOrder on NetworkMessageId',\n    decodeUriComponent('%0A'),\n    '| summarize arg_min(Timestamp, *) by CampaignSortOrder, NetworkMessageId',\n    decodeUriComponent('%0A'),\n    '| extend Campaign = tolong(CampaignSortOrder) + 1',\n    decodeUriComponent('%0A'),\n    '| project Campaign, Timestamp, Subject, SenderFromAddress, RecipientEmailAddress, NetworkMessageId',\n    decodeUriComponent('%0A'),\n    '| order by Campaign asc, Timestamp asc'\n)"
+            },
+            "Check_Skip": {
+              "actions": {
+                "Post_Skipped": {
+                  "type": "ApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connection": {
+                        "name": "@parameters('$connections')['teams-2']['connectionId']"
+                      }
+                    },
+                    "method": "post",
+                    "body": {
+                      "recipient": {
+                        "groupId": "@parameters('ProductionTeam')",
+                        "channelId": "@if(parameters('TeamsTestMode'), parameters('TestChannel'), parameters('ProductionChannel'))"
+                      },
+                      "messageBody": "<p class=\"editor-paragraph\">Campaign review skipped. No messages were submitted for release.</p>"
+                    },
+                    "path": "/beta/teams/conversation/message/poster/Flow bot/location/@{encodeURIComponent('Channel')}"
+                  }
+                },
+                "Skipped": {
+                  "runAfter": {
+                    "Post_Skipped": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Terminate",
+                  "inputs": {
+                    "runStatus": "Succeeded"
+                  }
+                }
+              },
+              "runAfter": {
+                "Post_Campaign_Selection_Card": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {}
+              },
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@ body('Post_Campaign_Selection_Card')?['data']?['decision']",
+                      "skip"
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            },
+            "Check_Allow_Remediation": {
+              "actions": {
+                "Select_Sender_Allow_Choices": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Unique_Selected_Senders')",
+                    "select": {
+                      "title": "@item()",
+                      "value": "@item()"
+                    }
+                  }
+                },
+                "Post_Sender_Allowlist_Review": {
+                  "runAfter": {
+                    "Select_Sender_Allow_Choices": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "ApiConnectionWebhook",
+                  "inputs": {
+                    "host": {
+                      "connection": {
+                        "name": "@parameters('$connections')['teams-4']['connectionId']"
+                      }
+                    },
+                    "body": {
+                      "notificationUrl": "@listCallbackUrl()",
+                      "body": {
+                        "messageBody": "{\n  \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n  \"type\": \"AdaptiveCard\",\n  \"version\": \"1.4\",\n  \"msteams\": {\n    \"width\": \"Full\"\n  },\n  \"body\": [\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"TABL Sender Allowlist Review\",\n      \"weight\": \"Bolder\",\n      \"size\": \"Large\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Select only the senders that should be added to the Tenant Allow/Block List.\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"Input.ChoiceSet\",\n      \"id\": \"selectedSenders\",\n      \"label\": \"Senders available for allowlisting\",\n      \"isMultiSelect\": true,\n      \"style\": \"expanded\",\n      \"wrap\": true,\n      \"isRequired\": false,\n      \"choices\": @{body('Select_Sender_Allow_Choices')}\n    },\n    {\n      \"type\": \"Input.Text\",\n      \"id\": \"allowlistNotes\",\n      \"label\": \"Analyst notes\",\n      \"isMultiline\": true,\n      \"isRequired\": false,\n      \"placeholder\": \"Optional reason for the allowlist selection\"\n    }\n  ],\n  \"actions\": [\n    {\n      \"type\": \"Action.Submit\",\n      \"title\": \"Add Selected Senders to TaBl Allowlist\",\n      \"data\": {\n        \"decision\": \"allow\"\n      }\n    },\n    {\n      \"type\": \"Action.Submit\",\n      \"title\": \"Skip\",\n      \"data\": {\n        \"decision\": \"skip\"\n      }\n    }\n  ]\n}",
+                        "updateMessage": "Response Submitted.",
+                        "recipient": {
+                          "groupId": "@parameters('ProductionTeam')",
+                          "channelId": "@if(parameters('TeamsTestMode'), parameters('TestChannel'), parameters('ProductionChannel'))"
+                        }
+                      }
+                    },
+                    "path": "/v1.0/teams/conversation/gatherinput/poster/Flow bot/location/@{encodeURIComponent('Channel')}/$subscriptions"
+                  }
+                },
+                "Compose_Selected_TABL_Senders": {
+                  "runAfter": {
+                    "Post_Sender_Allowlist_Review": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Compose",
+                  "inputs": "@if(\n    or(\n        equals(\n            body('Post_Sender_Allowlist_Review')?['data']?['decision'],\n            'skip'\n        ),\n        empty(\n            body('Post_Sender_Allowlist_Review')?['data']?['selectedSenders']\n        )\n    ),\n    json('[]'),\n    split(\n        body('Post_Sender_Allowlist_Review')?['data']?['selectedSenders'],\n        ','\n    )\n)"
+                },
+                "Check_Senders_Selected": {
+                  "actions": {
+                    "For_each_Unique_Sender": {
+                      "foreach": "@outputs('Compose_Selected_TABL_Senders')",
+                      "actions": {
+                        "Add_Sender_to_TaBl_Allow": {
+                          "type": "ApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connection": {
+                                "name": "@parameters('$connections')['azureautomation']['connectionId']"
+                              }
+                            },
+                            "method": "put",
+                            "body": {
+                              "properties": {
+                                "parameters": {
+                                  "Action": "Add",
+                                  "Notes": "@{concat(\n    'Submitted by: ',\n    coalesce(\n        body('Post_Sender_Allowlist_Review')?['responder']?['displayName'],\n        body('Post_Sender_Allowlist_Review')?['responder']?['email'],\n        'Unknown analyst'\n    )\n)} ",
+                                  "expirationDays": 30,
+                                  "Sender": "@{items('For_each_Unique_Sender')}",
+                                  "VerificationAttempts": 12,
+                                  "VerificationDelaySeconds": 10
+                                }
+                              }
+                            },
+                            "path": "/subscriptions/@{encodeURIComponent(parameters('Subscription'))}/resourceGroups/@{encodeURIComponent(parameters('Resource Group'))}/providers/Microsoft.Automation/automationAccounts/@{encodeURIComponent(parameters('Automation Account'))}/jobs",
+                            "queries": {
+                              "x-ms-api-version": "2015-10-31",
+                              "runbookName": "@parameters('TaBl Runbook Name')",
+                              "wait": true
+                            }
+                          }
+                        },
+                        "Get_job_output": {
+                          "runAfter": {
+                            "Add_Sender_to_TaBl_Allow": [
+                              "Succeeded"
+                            ]
+                          },
+                          "type": "ApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connection": {
+                                "name": "@parameters('$connections')['azureautomation']['connectionId']"
+                              }
+                            },
+                            "method": "get",
+                            "path": "/subscriptions/@{encodeURIComponent(parameters('Subscription'))}/resourceGroups/@{encodeURIComponent(parameters('Resource Group'))}/providers/Microsoft.Automation/automationAccounts/@{encodeURIComponent(parameters('Automation Account'))}/jobs/@{encodeURIComponent(body('Add_Sender_to_TaBl_Allow')?['properties']?['jobId'])}/output",
+                            "queries": {
+                              "x-ms-api-version": "2015-10-31"
+                            }
+                          }
+                        },
+                        "Append_to_Allow_Checklist": {
+                          "runAfter": {
+                            "Get_job_output": [
+                              "Succeeded"
+                            ]
+                          },
+                          "type": "AppendToArrayVariable",
+                          "inputs": {
+                            "name": "TaBlChecklist",
+                            "value": {
+                              "Sender": "@{items('For_each_Unique_Sender')}",
+                              "Status": "@{json(body('Get_job_output'))?['Result']}"
+                            }
+                          }
+                        }
+                      },
+                      "type": "Foreach"
+                    },
+                    "Create_HTML_table": {
+                      "runAfter": {
+                        "For_each_Unique_Sender": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@variables('TaBlChecklist')",
+                        "format": "HTML"
+                      }
+                    },
+                    "Post_TaBl_Result": {
+                      "runAfter": {
+                        "Create_HTML_table": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "ApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connection": {
+                            "name": "@parameters('$connections')['teams-1']['connectionId']"
+                          }
+                        },
+                        "method": "post",
+                        "body": {
+                          "recipient": {
+                            "groupId": "@parameters('ProductionTeam')",
+                            "channelId": "@if(parameters('TeamsTestMode'), parameters('TestChannel'), parameters('ProductionChannel'))"
+                          },
+                          "messageBody": "<h1 class=\"editor-heading-h1\"><b><strong class=\"editor-text-bold\">Automated TaBl Results</strong></b></h1><p class=\"editor-paragraph\">@{concat(\n    'Submitted by: ',\n    coalesce(\n        body('Post_Sender_Allowlist_Review')?['responder']?['displayName'],\n        body('Post_Sender_Allowlist_Review')?['responder']?['email'],\n        'Unknown analyst'\n    )\n)}</p><p class=\"editor-paragraph\">@{body('Create_HTML_table')}</p>"
+                        },
+                        "path": "/beta/teams/conversation/message/poster/Flow bot/location/@{encodeURIComponent('Channel')}"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Compose_Selected_TABL_Senders": [
+                      "Succeeded"
+                    ]
+                  },
+                  "else": {
+                    "actions": {}
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(outputs('Compose_Selected_TABL_Senders'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "type": "If"
+                }
+              },
+              "runAfter": {
+                "Check_Automated_Release": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {}
+              },
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@parameters('AllowRemediations')",
+                      true
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            },
+            "Unique_Selected_Senders": {
+              "runAfter": {
+                "For_each_Selected_Campaign": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@union(\n    variables('SelectedSenderAddresses'),\n    variables('SelectedSenderAddresses')\n)"
+            },
+            "Something_went_wrong": {
+              "runAfter": {
+                "Check_Allow_Remediation": [
+                  "Failed",
+                  "Skipped",
+                  "TimedOut"
+                ]
+              },
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['teams-3']['connectionId']"
+                  }
+                },
+                "method": "post",
+                "body": {
+                  "recipient": {
+                    "groupId": "@parameters('ProductionTeam')",
+                    "channelId": "@if(parameters('TeamsTestMode'), parameters('TestChannel'), parameters('ProductionChannel'))"
+                  },
+                  "messageBody": "<p class=\"editor-paragraph\">Something went wrong. Please alert the security automation engineer.</p>"
+                },
+                "path": "/beta/teams/conversation/message/poster/Flow bot/location/@{encodeURIComponent('Channel')}"
+              }
+            },
+            "Post_Hunting_Query": {
+              "runAfter": {
+                "Select_Campaign_Choices": [
+                  "Succeeded"
+                ]
+              },
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['teams-5']['connectionId']"
+                  }
+                },
+                "method": "post",
+                "body": {
+                  "recipient": {
+                    "groupId": "@parameters('ProductionTeam')",
+                    "channelId": "@if(parameters('TeamsTestMode'), parameters('TestChannel'), parameters('ProductionChannel'))"
+                  },
+                  "messageBody": "{\n  \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n  \"type\": \"AdaptiveCard\",\n  \"version\": \"1.4\",\n  \"msteams\": {\n    \"width\": \"Full\"\n  },\n  \"body\": [\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Advanced Hunting Preview\",\n      \"weight\": \"Bolder\",\n      \"size\": \"Large\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Copy and paste this query into Microsoft Defender Advanced Hunting to preview representative emails from the detected campaigns.\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"Input.Text\",\n      \"id\": \"advancedHuntingQuery\",\n      \"value\": \"@{replace(replace(replace(replace(outputs('Compose_Preview_Query'), decodeUriComponent('%5C'), decodeUriComponent('%5C%5C')), decodeUriComponent('%22'), decodeUriComponent('%5C%22')), decodeUriComponent('%0D'), ''), decodeUriComponent('%0A'), decodeUriComponent('%5C%6E'))}\",\n      \"isMultiline\": true,\n      \"isRequired\": false\n    }\n  ]\n}"
+                },
+                "path": "/v1.0/teams/conversation/adaptivecard/poster/Flow bot/location/@{encodeURIComponent('Channel')}"
+              }
+            },
+            "Get_ServiceNow_Secret": {
+              "runAfter": {
+                "Filter_Selected_Campaigns": [
+                  "Succeeded"
+                ]
+              },
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['keyvault']['connectionId']"
+                  }
+                },
+                "method": "get",
+                "path": "/secrets/@{encodeURIComponent(parameters('ServiceNowSecretName'))}/value"
+              },
+              "runtimeConfiguration": {
+                "secureData": {
+                  "properties": [
+                    "inputs",
+                    "outputs"
+                  ]
+                }
+              }
+            },
+            "Fail": {
+              "runAfter": {
+                "Something_went_wrong": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Failed",
+                "runError": {
+                  "code": "8675309",
+                  "message": "Something went wrong. Sorry."
+                }
+              }
+            },
+            "Get_User_Secret": {
+              "runAfter": {
+                "Get_ServiceNow_Secret": [
+                  "Succeeded"
+                ]
+              },
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['keyvault']['connectionId']"
+                  }
+                },
+                "method": "get",
+                "path": "/secrets/@{encodeURIComponent(parameters('UserSecretName'))}/value"
+              },
+              "runtimeConfiguration": {
+                "secureData": {
+                  "properties": [
+                    "inputs",
+                    "outputs"
+                  ]
+                }
+              }
+            }
+          },
+          "outputs": {}
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "azuremonitorlogs": {
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/azuremonitorlogs')]",
+                "connectionId": "[parameters('connections_azuremonitorlogs_externalid')]",
+                "connectionName": "azuremonitorlogs",
+                "connectionProperties": {
+                  "authentication": {
+                    "type": "ManagedServiceIdentity",
+                    "identity": "[parameters('userAssignedIdentityResourceId')]"
+                  }
+                }
+              },
+              "teams": {
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/teams')]",
+                "connectionId": "[parameters('connections_teams_externalid')]",
+                "connectionName": "teams",
+                "connectionProperties": {}
+              },
+              "teams-6": {
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/teams')]",
+                "connectionId": "[parameters('connections_teams_externalid')]",
+                "connectionName": "teams",
+                "connectionProperties": {}
+              },
+              "azureautomation": {
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/azureautomation')]",
+                "connectionId": "[parameters('connections_azureautomation_externalid')]",
+                "connectionName": "azureautomation",
+                "connectionProperties": {
+                  "authentication": {
+                    "type": "ManagedServiceIdentity",
+                    "identity": "[parameters('userAssignedIdentityResourceId')]"
+                  }
+                }
+              },
+              "teams-7": {
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/teams')]",
+                "connectionId": "[parameters('connections_teams_externalid')]",
+                "connectionName": "teams",
+                "connectionProperties": {}
+              },
+              "teams-1": {
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/teams')]",
+                "connectionId": "[parameters('connections_teams_externalid')]",
+                "connectionName": "teams",
+                "connectionProperties": {}
+              },
+              "teams-2": {
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/teams')]",
+                "connectionId": "[parameters('connections_teams_externalid')]",
+                "connectionName": "teams",
+                "connectionProperties": {}
+              },
+              "teams-4": {
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/teams')]",
+                "connectionId": "[parameters('connections_teams_externalid')]",
+                "connectionName": "teams",
+                "connectionProperties": {}
+              },
+              "teams-3": {
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/teams')]",
+                "connectionId": "[parameters('connections_teams_externalid')]",
+                "connectionName": "teams",
+                "connectionProperties": {}
+              },
+              "teams-5": {
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/teams')]",
+                "connectionId": "[parameters('connections_teams_externalid')]",
+                "connectionName": "teams",
+                "connectionProperties": {}
+              },
+              "keyvault": {
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/keyvault')]",
+                "connectionId": "[parameters('connections_keyvault_externalid')]",
+                "connectionName": "keyvault",
+                "connectionProperties": {
+                  "authentication": {
+                    "type": "ManagedServiceIdentity",
+                    "identity": "[parameters('userAssignedIdentityResourceId')]"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
