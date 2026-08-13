@@ -25,25 +25,9 @@ This workflow separates detection, review, release, allowlisting, and ticket cre
 
 ### Simplified Workflow Diagram
 
-```mermaid
-flowchart TD
-    A[Two-hour recurrence] --> B{Test mode?}
-    B -->|Yes| C[Test-sender query]
-    B -->|No| D[Production spoofing query]
-    C --> E[Build campaign results]
-    D --> E
-    E --> F[Post hunting preview and review card]
-    F --> G{Analyst decision}
-    G -->|Skip| H[Stop without remediation]
-    G -->|Approve| I[Resolve selected campaign data]
-    I --> J[Create one ServiceNow ticket per campaign]
-    I --> K{Automated release?}
-    K -->|Yes| L[Run release runbook]
-    K -->|No| M[Post manual PowerShell command]
-    I --> N{Allow remediation enabled?}
-    N -->|Yes| O[Post sender allowlist card]
-    O --> P[Run TABL runbook for selected senders]
-```
+<img src="./imgs/graphic2.svg"
+     alt="Main Graphic"
+     width="100%">
 
 ---
 
