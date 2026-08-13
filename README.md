@@ -25,7 +25,7 @@ This workflow separates detection, review, release, allowlisting, and ticket cre
 
 ### Simplified Workflow Diagram
 
-<img src="./imgs/graphic2.svg"
+<img src="./imgs/graphic3.svg"
      alt="Main Graphic"
      width="100%">
 
