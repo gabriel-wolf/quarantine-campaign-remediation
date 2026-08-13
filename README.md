@@ -270,7 +270,7 @@ The Logic App posts an HTML summary table containing the sender and returned sta
 
 ## Project Files
 
-### [`azuredeploy.sanitized.json`](azuredeploy.sanitized.json)
+### [`azuredeploy.json`](logic-apps/azuredeploy.json)
 
 Sanitized ARM template for the Consumption Logic App.
 
@@ -289,13 +289,13 @@ It includes:
 
 The template references existing API connections and supporting resources. It does not create the Azure Automation account, Key Vault, app registrations, managed identity, Teams team/channel, Log Analytics workspace, or ServiceNow catalog item.
 
-### [`Release-QuarantineCampaign.ps1`](Release-QuarantineCampaign.ps1)
+### [`Release-QuarantineCampaign.ps1`](runbooks/Release-QuarantineCampaign.ps1)
 
 Azure Automation runbook for releasing and verifying quarantine messages.
 
 It accepts one or more Internet Message IDs separated by `|||`, supports `release` and `check` actions, and returns compressed JSON for the Logic App.
 
-### [`Manage-TenantAllowList.ps1`](Manage-TenantAllowList.ps1)
+### [`Manage-TenantAllowList.ps1`](runbooks/Manage-TenantAllowList.ps1)
 
 Azure Automation runbook for checking, creating, and updating sender allow entries in the Microsoft Tenant Allow/Block List.
 
