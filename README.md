@@ -270,7 +270,7 @@ The Logic App posts an HTML summary table containing the sender and returned sta
 
 ## Project Files
 
-### [`azuredeploy.json`](logic-apps/azuredeploy.json)
+### [`azuredeploy.json`](logic-app/azuredeploy.json)
 
 Sanitized ARM template for the Consumption Logic App.
 
