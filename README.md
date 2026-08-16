@@ -457,9 +457,6 @@ Export-PfxCertificate `
 
 The `.cer` file contains the public key and is uploaded to the app registration. The `.pfx` contains the private key and is imported into the Azure Automation account as a certificate asset.
 
-> [!WARNING]
-> Never commit the `.pfx`, its password, a client secret, or exported certificate private-key material to source control. Delete temporary local certificate files after the Azure resources are configured and securely retain only the approved recovery copy.
-
 ### 3. Link the app registration and Azure Automation certificate
 
 In the app registration:
