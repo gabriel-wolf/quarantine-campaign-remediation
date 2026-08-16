@@ -12,6 +12,10 @@
 > [!NOTE]
 > This repository contains sanitized configuration values. Production tenant IDs, application IDs, domains, email addresses, Teams identifiers, workspace names, ServiceNow endpoints, resource names, credentials, certificate material, and organization-specific identifiers have been replaced with parameters or example values.
 
+> [!WARNING]
+> These templates are provided as anonymized reference implementations, not one-click marketplace-style deployments. 
+> The goal of this repository is to share the architecture, workflow logic, and implementation patterns behind the automation—not to provide a guaranteed plug-and-play deployment for every Azure environment.
+
 ---
 
 ## Overview
