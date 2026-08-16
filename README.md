@@ -29,7 +29,6 @@ This workflow separates detection, review, release, allowlisting, and ticket cre
 - Release can run automatically through Azure Automation or produce a manual PowerShell command.
 - A separate Teams card allows analysts to choose which senders, if any, should be added to the Tenant Allow/Block List.
 
-### Simplified Workflow Diagram
 
 <img src="./imgs/graphic3.svg"
      alt="Main Graphic"
